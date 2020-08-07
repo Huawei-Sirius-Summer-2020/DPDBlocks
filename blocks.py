@@ -17,16 +17,24 @@ class AFIR(nn.Module):
         i2 = self.imag(x[:,0].view(1,1,-1))
         return torch.cat((r1-r2, i1+i2), dim=1)
 
-class Delay(AFIR):
-    def __init__(self,M,D):
-        super(Delay,self).__init__(M,D)
-        self.real.weight.requires_grad=False
-        self.imag.weight.requires_grad=False
-        self.imag.weight.data[0, 0, int((M-1)/2)+D] = 1.0
+# class Delay(AFIR):
+#     def __init__(self,M,D):
+#         super(Delay,self).__init__(M,D)
+#         self.real.weight.requires_grad=False
+#         self.imag.weight.requires_grad=False
+#         self.imag.weight.data[0, 0, int((M-1)/2)+D] = 1.0
+#     def forward(self, x):
+#             r = self.real(x[:,0].view(1,1,-1))
+#             i = self.imag(x[:,1].view(1,1,-1))
+#             return torch.cat((r, i), dim=1)
+class Delay(nn.Module):
+    def __init__(self, M):
+        super(Delay, self).__init__()
+        self.op = nn.Sequential(
+            nn.ConstantPad1d(M,0)
+        )
     def forward(self, x):
-            r = self.real(x[:,0].view(1,1,-1))
-            i = self.imag(x[:,1].view(1,1,-1))
-            return torch.cat((r, i), dim=1)
+        return self.op(x)[:,:,:x.shape[2]]
 
 class Prod_cmp(nn.Module):
     def __init__(self):
@@ -56,8 +64,8 @@ class Polynomial(nn.Module):
         self.weights = nn.Parameter(torch.zeros((2, Poly_order), device=device, dtype=torch.float64), requires_grad=True)
         if passthrough:
             self.weights.data[0, 1] = 1
-        else:
-            torch.linspace(0,1,Poly_order,out=self.weights[0,:],device=device,requires_grad=True)
+#         else:
+#             torch.linspace(0,1,Poly_order,out=self.weights[0,:],device=device,requires_grad=True)
         self.Abs = ABS()
     def forward(self, x):
         out = torch.zeros_like(x)
