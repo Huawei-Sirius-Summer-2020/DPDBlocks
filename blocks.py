@@ -30,11 +30,12 @@ class AFIR(nn.Module):
 class Delay(nn.Module):
     def __init__(self, M):
         super(Delay, self).__init__()
+        self.M = M
         self.op = nn.Sequential(
-            nn.ConstantPad1d(M,0)
+            nn.ConstantPad1d(abs(M),0)
         )
     def forward(self, x):
-        return self.op(x)[:,:,:x.shape[2]]
+        return self.op(x)[:,:,:x.shape[2]] if self.M>0 else self.op(x)[:,:,-x.shape[2]:] 
 
 class Prod_cmp(nn.Module):
     def __init__(self):
